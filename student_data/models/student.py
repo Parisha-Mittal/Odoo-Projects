@@ -2,10 +2,18 @@ from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 import random
 
+
 class StudentData(models.Model):
     _name = 'student.data'
     _description = 'Student Information'
     _rec_name = 'student_name'
+
+    student_id = fields.Char(
+        string="Student ID",
+        readonly=True,
+        copy=False,
+        default="New"
+    )
 
     student_name = fields.Char(
         string="Student Name",
@@ -75,6 +83,27 @@ class StudentData(models.Model):
         compute="_compute_fee_color"
     )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+
+        for vals in vals_list:
+            if vals.get("student_id", "New") == "New":
+                vals["student_id"] = self.env["ir.sequence"].next_by_code(
+                    "student.data.sequence"
+                ) or "New"
+
+        return super().create(vals_list)
+
+    def write(self, vals):
+
+        for rec in self:
+            if rec.student_id == "New":
+                vals["student_id"] = self.env["ir.sequence"].next_by_code(
+                    "student.data.sequence"
+                ) or "New"
+
+        return super().write(vals)
+
     @api.depends('fees_status')
     def _compute_exam_result(self):
 
@@ -94,7 +123,6 @@ class StudentData(models.Model):
 
             if rec.fees_status == 'paid':
                 rec.exam_result = random.choice(grades)
-
             else:
                 rec.exam_result = "Fees not paid. Result not generated."
 
@@ -115,7 +143,6 @@ class StudentData(models.Model):
 
         if self.fees_status == 'paid':
             self.exam_result = random.choice(grades)
-
         else:
             self.exam_result = "Fees not paid. Result not generated."
 
@@ -126,19 +153,14 @@ class StudentData(models.Model):
 
             if rec.exam_result in ['A+', 'A']:
                 rec.grade_color = 'excellent'
-
             elif rec.exam_result in ['B+', 'B']:
                 rec.grade_color = 'good'
-
             elif rec.exam_result in ['C+', 'C']:
                 rec.grade_color = 'average'
-
             elif rec.exam_result in ['D', 'E']:
                 rec.grade_color = 'poor'
-
             elif rec.exam_result == 'Fail':
                 rec.grade_color = 'fail'
-
             else:
                 rec.grade_color = 'none'
 
@@ -146,7 +168,6 @@ class StudentData(models.Model):
     def _compute_fee_color(self):
 
         for rec in self:
-
             if rec.fees_status == 'paid':
                 rec.fee_color = 'paid'
             else:
@@ -157,7 +178,6 @@ class StudentData(models.Model):
 
         if self.student_class != '11':
             self.stream = False
-
 
     @api.constrains('phone')
     def _check_phone(self):
@@ -171,7 +191,7 @@ class StudentData(models.Model):
                 raise ValidationError(
                     "Phone number should contain only digits."
                 )
- 
+
             if len(rec.phone) != 10:
                 raise ValidationError(
                     "Phone number must contain exactly 10 digits."

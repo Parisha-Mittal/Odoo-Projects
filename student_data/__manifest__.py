@@ -12,6 +12,7 @@
     ],
 
     'data': [
+        'data/student_sequence.xml',
         'security/ir.model.access.csv',
         'views/student_views.xml',
     ],

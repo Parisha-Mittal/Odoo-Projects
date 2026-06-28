@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<odoo>
+
+    <record id="seq_student_data" model="ir.sequence">
+        <field name="name">Student Sequence</field>
+        <field name="code">student.data.sequence</field>
+        <field name="prefix">SD</field>
+        <field name="padding">3</field>
+        <field name="number_next">1</field>
+    </record>
+
+</odoo>
