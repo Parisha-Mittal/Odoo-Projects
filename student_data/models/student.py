@@ -2,7 +2,6 @@ from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 import random
 
-
 class StudentData(models.Model):
     _name = 'student.data'
     _description = 'Student Information'

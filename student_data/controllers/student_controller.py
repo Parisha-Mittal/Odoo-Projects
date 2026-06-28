@@ -13,19 +13,37 @@ class StudentAPI(http.Controller):
     )
     def create_student(self, **kwargs):
 
-        data = json.loads(request.httprequest.data)
+        body = request.httprequest.data.decode("utf-8")
+
+        data = {}
+
+        for line in body.splitlines():
+
+            if "=" in line:
+                key, value = line.split("=", 1)
+                data[key.strip()] = value.strip()
 
         student = request.env['student.data'].sudo().create({
+
             'student_name': data.get('student_name'),
-            'age': data.get('age'),
+
+            'age': int(data.get('age', 0)),
+
             'student_class': data.get('student_class'),
+
             'stream': data.get('stream'),
+
             'phone': data.get('phone'),
+
             'fees_status': data.get('fees_status'),
+
         })
 
-        return json.dumps({
-            "status": "success",
-            "id": student.id,
-            "message": "Student Created Successfully"
-        })
+        return request.make_response(
+            json.dumps({
+                "status": "success",
+                "id": student.id,
+                "message": "Student Created Successfully"
+            }),
+            headers=[('Content-Type', 'application/json')]
+        )

@@ -12,7 +12,6 @@
     color:white;
     font-weight:bold;
 }
-
 .o_list_renderer tbody tr:nth-child(even){
     background:#f7f9fc;
 }
