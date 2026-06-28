@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Tree View -->
+    <record id="view_laundry_order_tree" model="ir.ui.view">
+        <field name="name">laundry.order.tree</field>
+        <field name="model">laundry.order</field>
+        <field name="arch" type="xml">
+            <list>
+
+                <field name="customer_name"/>
+
+                <field name="mobile"/>
+
+                <field name="clothes"/>
+
+                <field name="bag_type"/>
+
+                <field name="price"/>
+
+                <field name="payment_status"/>
+
+                <field name="order_status"/>
+
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_laundry_order_form" model="ir.ui.view">
+        <field name="name">laundry.order.form</field>
+        <field name="model">laundry.order</field>
+        <field name="arch" type="xml">
+            <form>
+
+                <sheet>
+
+                    <group>
+
+                        <field name="customer_name"/>
+
+                        <field name="mobile"/>
+
+                        <field name="clothes"/>
+
+                        <field name="bag_type" readonly="1"/>
+
+                        <field name="price" readonly="1"/>
+
+                        <field name="payment_status"/>
+
+                        <field name="order_status" readonly="1"/>
+
+                        <field name="confirmation_message" readonly="1"/>
+
+                    </group>
+
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_laundry_order" model="ir.actions.act_window">
+        <field name="name">Laundry Orders</field>
+        <field name="res_model">laundry.order</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Main Menu -->
+    <menuitem
+        id="laundry_main_menu"
+        name="Laundry Service"
+        sequence="10"/>
+
+    <!-- Sub Menu -->
+    <menuitem
+        id="laundry_order_menu"
+        name="Orders"
+        parent="laundry_main_menu"
+        action="action_laundry_order"/>
+
+</odoo>

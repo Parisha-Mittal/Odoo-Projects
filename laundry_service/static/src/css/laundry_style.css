@@ -1,0 +1,22 @@
+/* ==========================================
+   Laundry Orders List Styling
+   ========================================== */
+
+/* Center all column headings */
+.o_list_renderer thead th {
+    text-align: center !important;
+    vertical-align: middle !important;
+    font-weight: 600;
+}
+
+/* Center all cell values */
+.o_list_renderer tbody td {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+/* Center checkbox column */
+.o_list_renderer th.o_list_record_selector,
+.o_list_renderer td.o_list_record_selector {
+    text-align: center !important;
+}

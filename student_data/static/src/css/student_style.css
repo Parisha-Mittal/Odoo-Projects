@@ -1,0 +1,89 @@
+.o_list_renderer th{
+    text-align:center !important;
+}
+
+.o_list_renderer td{
+    text-align:center !important;
+    vertical-align:middle !important;
+}
+
+.o_list_renderer thead{
+    background:#1f4e79;
+    color:white;
+    font-weight:bold;
+}
+
+.o_list_renderer tbody tr:nth-child(even){
+    background:#f7f9fc;
+}
+
+.o_list_renderer tbody tr:hover{
+    background:#e8f4ff !important;
+}
+
+.o_form_view .o_form_sheet{
+    border-radius:12px;
+}
+
+.o_group{
+    padding:10px;
+}
+
+.o_badge{
+
+    border-radius:18px !important;
+
+    padding:6px 14px !important;
+
+    font-weight:600;
+
+    font-size:13px;
+
+}
+
+.text-bg-success{
+
+    background:#1aa64b !important;
+
+    color:white !important;
+
+}
+
+.text-bg-danger{
+
+    background:#d9534f !important;
+
+    color:white !important;
+
+}
+
+.text-bg-info{
+
+    background:#3498db !important;
+
+    color:white !important;
+
+}
+
+.text-bg-warning{
+
+    background:#f0ad4e !important;
+
+    color:black !important;
+
+}
+.o_form_label{
+
+    font-weight:bold;
+
+}
+.o_input{
+
+    border-radius:8px !important;
+
+}
+
+.o_form_sheet h1{
+    color:#1f4e79;
+
+}
