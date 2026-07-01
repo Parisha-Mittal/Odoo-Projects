@@ -1,23 +1,147 @@
 from odoo import http
 from odoo.http import request
 import json
+import re
 
+EMAIL_REGEX = re.compile(
+    r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+)
+
+def _get_text_data():
+
+    text = request.httprequest.data.decode("utf-8")
+
+    if not text:
+        return {}
+
+    return json.loads(text)
 
 class StudentAPI(http.Controller):
 
-    def _get_text_data(self):
+    @http.route(
+        '/api/v1/student/signup',
+        csrf=False,
+        auth='public',
+        methods=['POST', 'OPTIONS']
+    )
+    def signup(self, **kwargs):
 
-        text = request.httprequest.data.decode("utf-8")
+        try:
+            data = _get_text_data()
+            required_keys = [
+                "name",
+                "email",
+                "password",
+                "mobile"
+            ]
+            for key in required_keys:
+                if not data.get(key):
+                    return json.dumps({
+                        "status": False,
+                        "message": f"{key} is required"
+                    })
+            if not re.match(EMAIL_REGEX, data.get("email")):
+                return json.dumps({
+                    "status": False,
+                    "message": "Invalid Email"
+                })
+            existing_user = request.env['student.user'].sudo().search(
+                [('email', '=', data.get('email'))],
+                limit=1
+            )
+            if existing_user:
+                return json.dumps({
+                    "status": False,
+                    "message": "User already exists"
+                })
+            otp = str(__import__("random").randint(100000, 999999))
+            user = request.env['student.user'].sudo().create({
+                "name": data.get("name"),
+                "email": data.get("email"),
+                "password": data.get("password"),
+                "mobile": data.get("mobile"),
+                "signup_otp": otp,
+            })
+            return json.dumps({
+                "status": True,
+                "message": "Signup Successful",
+                "otp": otp
+            })
+        except Exception as e:
+            return json.dumps({
+                "status": False,
+                "message": str(e)
+            })
 
-        data = {}
+    @http.route(
+        '/api/v1/student/verify-otp',
+        csrf=False,
+        auth="public",
+        methods=['POST', 'OPTIONS']
+    )
+    def verify_otp(self, **kwargs):
 
-        for line in text.splitlines():
+        data = _get_text_data()
 
-            if "=" in line:
-                key, value = line.split("=", 1)
-                data[key.strip()] = value.strip()
+        user = request.env['student.user'].sudo().search([
+            ('email', '=', data.get('email'))
+        ], limit=1)
 
-        return data
+        if not user:
+            return json.dumps({
+                "status": False,
+                "message": "User not found"
+            })
+
+        if user.signup_otp != data.get("otp"):
+            return json.dumps({
+                "status": False,
+                "message": "Invalid OTP"
+            })
+
+        user.write({
+            "otp_verified": True,
+            "signup_otp": False
+        })
+
+        return json.dumps({
+            "status": True,
+            "message": "OTP Verified Successfully"
+        })
+
+    @http.route(
+        '/api/v1/student/login',
+        csrf=False,
+        auth="public",
+        methods=['POST', 'OPTIONS']
+    )
+    def login(self, **kwargs):
+
+        data = _get_text_data()
+
+        user = request.env['student.user'].sudo().search([
+            ('email', '=', data.get('email')),
+            ('password', '=', data.get('password'))
+        ], limit=1)
+
+        if not user:
+            return json.dumps({
+                "status": False,
+                "message": "Invalid Email or Password"
+            })
+
+        if not user.otp_verified:
+            return json.dumps({
+                "status": False,
+                "message": "Please verify your OTP first"
+            })
+
+        return json.dumps({
+            "status": True,
+            "message": "Login Successful",
+            "user_id": user.id,
+            "name": user.name
+        })
 
     @http.route(
         '/api/v1/student/create',
@@ -27,40 +151,48 @@ class StudentAPI(http.Controller):
     )
     def create_student(self, **kwargs):
 
-        data = self._get_text_data()
+        data = _get_text_data()
+        user = request.env['student.user'].sudo().search([
+            ('email', '=', data.get('email'))
+        ], limit=1)
+
+        if not user:
+            return json.dumps({
+                "status": False,
+                "message": "Please Signup First"
+            })
+
+        if not user.otp_verified:
+            return json.dumps({
+                "status": False,
+                "message": "Please Verify OTP"
+            })
 
         student = request.env['student.data'].sudo().create({
-
             'student_name': data.get('student_name'),
-
             'age': int(data.get('age')),
-
             'student_class': data.get('student_class'),
-
-            'stream': data.get('stream')
-            if data.get('student_class') == '11'
-            else False,
-
+            'stream': data.get('stream') if data.get('student_class') == '11' else False,
             'phone': data.get('phone'),
-
             'fees_status': data.get('fees_status'),
-
+            'user_id': user.id,
         })
 
-        return (
-            f"Student Created Successfully\n"
-            f"Student ID : {student.id}"
-        )
+        return json.dumps({
+            "status": "success",
+            "message": "Student Created Successfully",
+            "student_id": student.student_id
+        })
 
     @http.route(
         '/api/v1/student/update',
         csrf=False,
         auth="public",
-        methods=['PATCH']
+        methods=['PATCH', 'OPTIONS']
     )
     def update_student(self, **kwargs):
 
-        data = self._get_text_data()
+        data = _get_text_data()
 
         student = request.env['student.data'].sudo().search(
             [('student_id', '=', data.get('student_id'))],
@@ -83,11 +215,9 @@ class StudentAPI(http.Controller):
             values['student_class'] = data.get('student_class')
 
             if data.get('student_class') != '11':
-
                 values['stream'] = False
 
             elif data.get('stream'):
-
                 values['stream'] = data.get('stream')
 
         if data.get('phone'):
@@ -95,19 +225,20 @@ class StudentAPI(http.Controller):
 
         if data.get('fees_status'):
             values['fees_status'] = data.get('fees_status')
-
+        print(values)
         student.write(values)
 
-        return (
-            f"Student Updated Successfully\n"
-            f"Student ID : {student.id}"
-        )
+        return json.dumps({
+            "status": "success",
+            "message": "Student Updated Successfully",
+            "student_id": student.student_id
+        })
 
     @http.route(
         '/api/v1/student/all',
         csrf=False,
         auth="public",
-        methods=['GET']
+        methods=['GET', 'OPTIONS']
     )
     def get_all_students(self, **kwargs):
 
@@ -119,15 +250,15 @@ class StudentAPI(http.Controller):
 
             data.append({
 
-                "id": student.id,
+                "student_id": student.student_id,
 
                 "student_name": student.student_name,
 
                 "age": student.age,
 
-                "class": student.student_class,
+                "student_class": student.student_class,
 
-                "stream": student.stream,
+                "stream": student.stream or "",
 
                 "phone": student.phone,
 
@@ -137,32 +268,35 @@ class StudentAPI(http.Controller):
 
             })
 
-        return json.dumps(data, indent=4)
+        return json.dumps(data)
 
     @http.route(
-        '/api/v1/student/<int:student_id>',
+        '/api/v1/student/<string:student_id>',
         csrf=False,
         auth="public",
-        methods=['GET']
+        methods=['GET', 'OPTIONS']
     )
     def get_student(self, student_id, **kwargs):
 
-        student = request.env['student.data'].sudo().browse(student_id)
+        student = request.env['student.data'].sudo().search(
+            [('student_id', '=', student_id)],
+            limit=1
+        )
 
         if not student.exists():
             return "Student Not Found"
 
         data = {
 
-            "id": student.id,
+            "student_id": student.student_id,
 
             "student_name": student.student_name,
 
             "age": student.age,
 
-            "class": student.student_class,
+            "student_class": student.student_class,
 
-            "stream": student.stream,
+            "stream": student.stream or "",
 
             "phone": student.phone,
 
@@ -172,4 +306,32 @@ class StudentAPI(http.Controller):
 
         }
 
-        return json.dumps(data, indent=4)
+        return json.dumps(data)
+
+    @http.route(
+        '/api/v1/student/delete',
+        csrf=False,
+        auth="public",
+        methods=['DELETE', 'OPTIONS']
+    )
+    def delete_student(self, **kwargs):
+
+        data = _get_text_data()
+
+        student = request.env['student.data'].sudo().search(
+            [('student_id', '=', data.get('student_id'))],
+            limit=1
+        )
+
+        if not student.exists():
+            return "Student Not Found"
+
+        student.unlink()
+
+        data = {
+            "status": "success",
+            "message": "Student Deleted Successfully",
+            "student_id": student.student_id
+        }
+
+        return json.dumps(data)

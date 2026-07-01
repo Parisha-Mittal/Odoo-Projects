@@ -12,9 +12,12 @@
     ],
 
     'data': [
-        'data/student_sequence.xml',
         'security/ir.model.access.csv',
         'views/student_views.xml',
+        'views/student_user_views.xml',
+        'views/student_data_inherit_views.xml',
+        'views/student_history_views.xml',
+        'wizard/update_fees_wizard_views.xml',
     ],
 
     'assets': {

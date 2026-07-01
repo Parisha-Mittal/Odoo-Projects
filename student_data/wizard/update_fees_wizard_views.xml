@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="update_fees_wizard_form"
+            model="ir.ui.view">
+
+        <field name="name">update.fees.wizard.form</field>
+
+        <field name="model">update.fees.wizard</field>
+
+        <field name="arch" type="xml">
+
+            <form string="Update Fees Status">
+
+                <group>
+
+                    <field name="fees_status"/>
+
+                </group>
+
+                <footer>
+
+                    <button
+                        name="action_update"
+                        type="object"
+                        string="Update"
+                        class="btn-primary"/>
+
+                    <button
+                        string="Cancel"
+                        special="cancel"/>
+
+                </footer>
+
+            </form>
+
+        </field>
+
+    </record>
+
+</odoo>

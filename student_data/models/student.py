@@ -14,6 +14,11 @@ class StudentData(models.Model):
         copy=False,
         default="New"
     )
+    user_id = fields.Many2one(
+        'student.user',
+        string="Created By",
+        readonly=True
+    )
 
     student_name = fields.Char(
         string="Student Name",
@@ -83,26 +88,89 @@ class StudentData(models.Model):
         compute="_compute_fee_color"
     )
 
+    history_count = fields.Integer(
+        compute="_compute_history_count"
+    )
+
+    def action_update_fees(self):
+
+        self.ensure_one()
+
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Update Fees",
+            "res_model": "update.fees.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "active_id": self.id
+            }
+        }
+
+    def _compute_history_count(self):
+        for rec in self:
+            rec.history_count = self.env["student.history"].search_count(
+                [
+                    ("student_id", "=", rec.id)
+                ]
+    )
+
+    def action_view_history(self):
+        self.ensure_one()
+        context = dict(self.env.context)
+        domain = [
+            ("student_id", "=", self.id)
+        ]
+        return smart_button_action(
+            domain,
+            context,
+            "Student History"
+        )
+
     @api.model_create_multi
     def create(self, vals_list):
 
         for vals in vals_list:
-            if vals.get("student_id", "New") == "New":
-                vals["student_id"] = self.env["ir.sequence"].next_by_code(
-                    "student.data.sequence"
-                ) or "New"
 
-        return super().create(vals_list)
+            if not vals.get("student_id") or vals.get("student_id") == "New":
+
+                last_student = self.search(
+                    [('student_id', '!=', False)],
+                    order='student_id desc',
+                    limit=1
+                )
+
+                if last_student:
+
+                    last_number = int(last_student.student_id.replace("SD", ""))
+                    vals["student_id"] = f"SD{last_number + 1:03d}"
+
+                else:
+                    vals["student_id"] = "SD001"
+
+        students = super().create(vals_list)
+
+        for student in students:
+            self.env["student.history"].create({
+                "student_id": student.id,
+                "action": "created",
+                "remarks": "Student record created",
+            })
+
+        return students
 
     def write(self, vals):
 
-        for rec in self:
-            if rec.student_id == "New":
-                vals["student_id"] = self.env["ir.sequence"].next_by_code(
-                    "student.data.sequence"
-                ) or "New"
+        result = super().write(vals)
 
-        return super().write(vals)
+        for rec in self:
+            self.env["student.history"].create({
+                "student_id": rec.id,
+                "action": "updated",
+                "remarks": "Student details updated",
+            })
+
+        return result
 
     @api.depends('fees_status')
     def _compute_exam_result(self):
@@ -206,3 +274,20 @@ class StudentData(models.Model):
                 raise ValidationError(
                     "Age should be between 3 and 25."
                 )
+
+def smart_button_action(domain, context, name):
+
+    context.update(
+        create=False,
+        edit=False,
+        delete=False
+    )
+
+    return {
+        "name": name,
+        "type": "ir.actions.act_window",
+        "res_model": "student.history",
+        "view_mode": "list,form",
+        "domain": domain,
+        "context": context,
+    }

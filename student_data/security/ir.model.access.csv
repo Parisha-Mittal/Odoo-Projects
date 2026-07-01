@@ -1,2 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_student_data,student.data,model_student_data,,1,1,1,1
+access_student_user,student.user,model_student_user,,1,1,1,1
+access_student_history,student.history,model_student_history,,1,1,1,1
+access_update_fees_wizard,update.fees.wizard,model_update_fees_wizard,,1,1,1,1
